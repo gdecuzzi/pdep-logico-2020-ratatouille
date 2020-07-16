@@ -5,7 +5,7 @@ rata(django,pizzeriaJeSuis).
 
 cocina(linguini, ratatouille, 3).
 cocina(linguini, sopa, 5).
-cocina(colette, salmonAsado, 9).
+cocina(colette, salmonAsado, 10).
 cocina(colette, sopa, 10).
 cocina(horst, ensalaRusa, 8).
 
@@ -15,28 +15,46 @@ trabaja(horst, gusteaus).
 trabaja(skinner, gusteaus).
 trabaja(amelie, cafeDes2Moulins).
 
-/** 2. inspeccionSatisfactoria/1 se cumple para un restaurante cuando no viven ratas allí. */
-inspeccionSatisfactoria(Restaurante) :- 
-    trabaja(_,Restaurante),
-    not(rata(_,Restaurante)).
+/** Saber el menú de un resto, que son los platos que se concinan en él. */
+menu(Restaurante, Plato) :-
+    trabaja(Cocinere, Restaurante),
+    cocina(Cocinere, Plato ,_).
 
-/** 3. chef/2: relaciona un empleado con un restaurante si el empleado trabaja allí y sabe cocinar algún plato. */
+/** 
+ * Saber si quién cocina bien un determinado plato, que es verdadero para una persona si su experiencia preparando ese plato es mayor a 7, ó si tiene un tutor que cocina bien el plato. Nos contaron que Linguini tiene como tutor a toda rata que viva en el lugar donde trabaja, además que Amelie es la tutora de Skinner.
+También se sabe que remy cocina bien cualquier plato que exista.
+ */
+cocinaBien(Cocinere, Plato) :- cocina(Cocinere, Plato, Exp), Exp > 7.
+cocinaBien(Cocinere, Plato) :- tutore(Cocinere, Tutore), cocinaBien(Tutore, Plato).
+cocinaBien(remy, Plato) :- cocina(_, Plato, _).
+
+
+tutore(linguini, Tutore) :-
+    trabaja(linguini, Restaurante),
+    rata(Tutore, Restaurante).
+
+tutore(skinner, amelie).
+
+
+
+/** Conocer los chefs de un resto, que son, de los que trabajan en el resto, aquellos que cocinan bien todos los platos del menú ó entre todos los platos que sabe cocinar suma una experiencia de al menos 20. */
 chef(Cocinere, Restaurante) :-
     trabaja(Cocinere, Restaurante),
-    cocina(Cocinere,_ ,_).
+    esRespetado(Cocinere, Restaurante).
 
-/** 4. chefcito/1: se cumple para una rata si vive en el mismo restaurante donde trabaja linguini. */
-chefcito(Rata):-
-    rata(Rata, Restaurante),
-    trabaja(linguini, Restaurante).
+esRespetado(Cocinere, Restaurante) :-
+    forall(menu(Restaurante, Plato), cocinaBien(Cocinere, Plato)).
 
-/** 5. cocinaBien/2 es verdadero para una persona si su experiencia preparando ese plato es mayor a 7. Además, remy cocina bien cualquier plato que exista. */
-cocinaBien(remy, Plato) :- cocina(_, Plato, _).
-cocinaBien(C, Plato) :- cocina(C, Plato, Exp), Exp > 7.
+esRespetado(Cocinere, _) :-
+    experienciaTotal(Cocinere, Experiencia),
+    Experiencia >= 20.
+
+experienciaTotal(Cocinere, Experiencia) :-
+    findall(Exp, cocina(Cocinere, _, Exp), Exps),
+    sum_list(Exps, Experiencia).
 
 
-
-/** 6. encargadoDe/3: nos dice el encargado de cocinar un plato en un restaurante, que es quien más experiencia tiene preparándolo en ese lugar. */
+/** encargadoDe/3: nos dice el encargado de cocinar un plato en un restaurante, que es quien más experiencia tiene preparándolo en ese lugar. */
 
 encargadeDe(Encargado, Plato, Restaurante) :- 
     trabaja(Encargado,Restaurante),
@@ -50,7 +68,7 @@ plato(pechugaALaPlancha, principal(ensalada, 10)).
 plato(frutillasConCrema, postre(265)).
 plato(ensalaDeFrutas, postre(70)).
 
-/** 7. saludable/1: un plato es saludable si tiene menos de 75 calorías. */
+/** saludable/1: un plato es saludable si tiene menos de 75 calorías. */
 saludable(Plato):- 
     plato(Plato, TipoPlato), 
     calorias(TipoPlato, Calorias),
@@ -76,15 +94,19 @@ criticaPositiva(Critico, Restaurante):-
     inspeccionSatisfactoria(Restaurante),
     buenaResenia(Critico, Restaurante).
 
-especialistas(Plato, Restaurante) :- 
-    trabaja(Alguien, Restaurante),
-    cocina(Alguien, Plato, _),
-    forall((trabaja(Cocinere, Restaurante), cocina(Cocinere, Plato, _)),cocinaBien(Cocinere, Plato)).
+inspeccionSatisfactoria(Restaurante) :- 
+    trabaja(_,Restaurante),
+    not(rata(_,Restaurante)).
+
+
 buenaResenia(antonEgo, Restaurante) :- 
-    trabaja(_, Restaurante),
     especialistas(ratatouille, Restaurante).
+
 buenaResenia(cormillot , Restaurante) :- 
     forall((trabaja(Cocinere, Restaurante), cocina(Cocinere, Plato, _)),saludable(Plato)).
 
 
+especialistas(Plato, Restaurante) :- 
+    menu(Restaurante, Plato),
+    forall((trabaja(Cocinere, Restaurante), cocina(Cocinere, Plato, _)),cocinaBien(Cocinere, Plato)).
 
