@@ -52,21 +52,23 @@ plato(ensalaDeFrutas, postre(70)).
 
 /** 7. saludable/1: un plato es saludable si tiene menos de 75 calorías. */
 saludable(Plato):- 
-    plato(Plato, postre(Calorias)), 
+    plato(Plato, TipoPlato), 
+    calorias(TipoPlato, Calorias),
     Calorias < 75.
-saludable(Plato):- 
-    plato(Plato, principal(Guarnicion,TiempoCoccion)), 
-    calorias(Guarnicion, Calorias),
-    CaloriasTotales is TiempoCoccion * 5 + Calorias,
-    CaloriasTotales < 75.
-saludable(Plato) :-
-    plato(Plato, entrada(Ingredientes)), 
+
+calorias(postre(Calorias), Calorias).
+
+calorias(principal(Guarnicion,TiempoCoccion), Calorias):- 
+    caloriasGuarnicion(Guarnicion, CaloriasGuarnicion),
+    Calorias is TiempoCoccion * 5 + CaloriasGuarnicion.
+
+calorias(entrada(Ingredientes), Calorias) :-
     length(Ingredientes, Cantidad),
-    CaloriasTotales is Cantidad * 15,
-    CaloriasTotales < 75.
-calorias(papasFritas,60).
-calorias(pure,20).
-calorias(ensalada,0).
+    Calorias is Cantidad * 15.
+
+caloriasGuarnicion(papasFritas,60).
+caloriasGuarnicion(pure,20).
+caloriasGuarnicion(ensalada,0).
 
 /** 8. criticaPositiva/2: es verdadero para un restaurante si un crítico le escribe una reseña positiva. */
 
