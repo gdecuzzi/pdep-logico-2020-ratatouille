@@ -4,11 +4,21 @@ trabaja(colette, gusteaus).
 trabaja(horst, gusteaus).
 trabaja(skinner, gusteaus).
 trabaja(amelie, cafeDes2Moulins).
+/*Agregamos para completar con mejores consultas*/
+trabaja(guille, cafeDes2Moulins).
+trabaja(gise, cafeMargot).
+
 
 cocina(linguini,ratatouille,3).
 cocina(linguini,sopa,5).
 cocina(colette,salmonAsado,8).
 cocina(horst,ensaladaRusa,8).
+
+/*Agregamos para completar con mejores consultas*/
+cocina(amelie, raclette, 8).
+cocina(guille, pizza,10).
+cocina(guille, milangaConFritas,10).
+cocina(amelie, pizza, 1). 
 
 rata(remy, gusteaus).
 rata(emile, chezMilleBar).
@@ -78,12 +88,6 @@ chef(Cocinere, Restaurante) :-
     sumlist(Experiencias, Total),
     Total >=20.
 
-/*
-cocina(amelie, raclette, 8).
-trabaja(guille, cafeDes2Moulins).
-cocina(guille, pizza,10).
-cocina(guille, milangaConFritas,10).
-*/
 
 /*
 
@@ -104,16 +108,12 @@ esRespetade(Cocinere, Restaurante):-
 /*
   * aCargo(colette, salmonAsado, gusteaus). ==> aCargo(Cocinere,Plato,Restaurante).
   * Importante para mencionar:
-    -
-
-Deducir cuál es la persona encargada de cocinar un plato en un restaurante, que es quien más experiencia tiene preparándolo en ese lugar.
-Nota: si sos la única persona que cocina el plato, sos el encargado, dado que tenés más experiencia cocinando el plato que las demás personas.
     - forall: antecedente y consecuente: TIP LEER EN VOZ ALTA
     - inversibilidad
     - delegar
 */
 
-cocina(amelie, pizza, 1).
+
 aCargo(Cocinere, Plato, Restaurante):-
     trabaja(Cocinere, Restaurante),
     cocina(Cocinere, Plato, Experiencia),
@@ -134,6 +134,70 @@ experienciaDeCompaniereCocinando(Plato, Companiere, Experiencia):-
 
 
 /* Punto 5: Guille */
+/* saludable/1: saludable(bifeDeChorizo).
+ * Importante a mencionar 
+   - polimorfismo
+   - pattern matching con functores
+   - delegación
+   - que no se puede MUTAR CaloriasBase is Calorias * 5 NOOOO Calorias is Calorias * 5 (salvo el 0 es siempre false!!!!)
+   - universo cerrado no nos ayuda
+   - caloriasGuarnicion ¡son hechos!
+ */
 
+plato(ensaladaRusa, entrada([papa, zanahoria, arvejas, huevo, mayonesa])).
+plato(ensaladaMixta, entrada([lechuga, tomate, cebolla])).
+plato(bifeDeChorizo, principal(pure, 20)).
+plato(ratatouille, principal(pure, 10)).
+plato(frutillasConCrema, postre(265)).
+plato(ensaladaDeFrutas, postre(74)).
 
+saludable(Plato):-
+    plato(Plato, Info),
+    calorias(Info, Calorias),
+    Calorias < 75.
+
+calorias(entrada(Ingredientes), Calorias) :- 
+    length(Ingredientes, Cantidad),
+    Calorias is Cantidad * 15.
+
+calorias(principal(Guarnicion, Tiempo), Calorias):-
+    CaloriasBase is Tiempo * 5,
+    caloriasGuarnicion(Guarnicion, CaloriasGuarnicion),
+    Calorias is CaloriasBase + CaloriasGuarnicion.
+
+calorias(postre(Calorias), Calorias).
+
+caloriasGuarnicion(pure, 20).
+caloriasGuarnicion(fritas, 50).
+caloriasGuarnicion(ensalada, 0).
+
+/* Punto 6: Gise */
+/*
+ * reseniaPositiva(antonEgo, gusteaus). ==> /2 critico con restaurante
+Marcar:
+    - pide a gritos la delegación
+    - posible problema de inveribilidad, seCumpleCriterio tiene que ser inversible
+    - generamos con MENU que es exacto lo que necesitamos (para anton)
+    - habla de CHEF no son los cocineres son los CHEFS
+    - universo cerrado (por gordon ramsey!)
+    - picardía en generar en el momento adecuado: "El orden no importa salvo que esté adentro de la cláusula ahi lamentablemente me importa."
+ */
+
+reseniaPositiva(Critico, Restaurante) :-
+    seCumpleCriterio(Critico, Restaurante),
+    not(rata(_, Restaurante)).
+
+/*Anton Ego espera, además, que en el lugar sean especialistas preparando ratatouille. Un restaurante es especialista en aquellos platos que todos sus chefs saben cocinar bien.*/
+especialistas(Plato, Restaurante) :-
+    menu(Plato, Restaurante),
+    forall(chef(Chef, Restaurante), cocinaBien(Chef, Plato)).
+
+seCumpleCriterio(antonEgo, Restaurante):- especialistas(ratatouille, Restaurante).
+seCumpleCriterio(cormillot, Restaurante) :-
+    menu(_, Restaurante),
+    forall((trabaja(Cocinere, Restaurante), cocina(Cocinere, Plato, _)), saludable(Plato)).
+/* seCumpleCriterio(cormillot, Restaurante) :- cocinanSoloSaludable(Restaurante).*/
+seCumpleCriterio(martiniano, Restaurante):-
+    trabaja(Cocinere, Restaurante),
+    findall(Trabajador, trabaja(Trabajador, Restaurante), [Cocinere]).
 
